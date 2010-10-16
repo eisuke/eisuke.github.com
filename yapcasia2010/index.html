@@ -1,0 +1,1886 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+        <!-- Slide meta data, remove/edit as you see fit -->
+        <title>Introducing DBIx::ObjectMapper</title>
+        <meta name="generator" content="Organic" />
+        <meta name="author" content="Eisuke Oishi" />
+        <meta name="company" content="Neowing" />
+        <meta name="email" content="oishi@cpan.org" />
+        <meta name="presdate" content="2010-10-16" />
+        <!-- Slippy core file and dependencies -->
+        <script type="text/javascript" src="slippy/src/jquery-1.4.2.min.js"></script>
+        <script type="text/javascript" src="slippy/src/jquery.history.js"></script>
+        <script type="text/javascript" src="slippy/src/slippy-0.9.0.js"></script>
+        <!-- Slippy structural styles -->
+        <link type="text/css" rel="stylesheet" href="slippy/src/slippy-0.9.0.css"/>
+        <!-- Slippy theme -->
+        <link type="text/css" rel="stylesheet" href="my.css"/>
+        <!-- Syntax highlighting core file  -->
+        <script type="text/javascript" src="slippy/src/highlighter/shCore.js"></script>
+        <!-- Syntax highlighting brushes, remove those you don't need -->
+        <script type="text/javascript" src="slippy/src/highlighter/shBrushPlain.js"></script>
+        <script type="text/javascript" src="slippy/src/highlighter/shBrushPerl.js"></script>
+        <script type="text/javascript" src="slippy/src/highlighter/shBrushSql.js"></script>
+        <!-- Syntax highlighting styles-->
+        <link type="text/css" rel="stylesheet" href="slippy/src/highlighter/shCore.css"/>
+<!--
+        <link type="text/css" rel="stylesheet" href="slippy/src/highlighter/shThemeDjango.css" />
+        <link type="text/css" rel="stylesheet" href="slippy/src/highlighter/shThemeRDark.css" />
+-->
+        <link type="text/css" rel="stylesheet" href="slippy/src/highlighter/shThemeMidnight.css" />
+
+
+        <!-- Slippy init code -->
+        <script type="text/javascript">
+            $(function() {
+                $(".slide").slippy({
+                    // settings go here
+                    // possible values are:
+                    //  - animLen, duration for default animations (0 = disabled)
+            animLen: 0
+                    //  - animInForward, receives a slide and animates it
+                    //  - animInRewind, receives a slide and animates it
+                    //  - animOutForward, receives a slide and animates it
+                    //  - animOutRewind, receives a slide and animates it
+                    //  - baseWidth, defines the base for img resizing, if you don't want only
+                    //    full-width images, specify this as the pixel width of a slide so that
+                    //    images are scaled properly (default is 620px wide)
+                    //  - ratio, defines the width/height ratio of the slides, defaults to 1.3 (620x476)
+                });
+                SyntaxHighlighter.all();
+            });
+        </script>
+        <!-- Custom style for this deck -->
+        <style type="text/css">
+            .slide.nochrome {
+                border: 0;
+                background: 0;
+            }
+
+            h1 { font-size: 2.5em; }
+            p{ font-size: 1.5em; }
+            li{ font-size: 1.5em; }}
+        </style>
+    </head>
+    <body>
+        <div class="slide" layout="alt">
+          <div class="vcenter hcenter">
+            <h1 style="font-size:4em;">introducing</h1>
+            <h1 style="font-size:5em;"> DBIx::ObjectMapper</h1>
+            <h3>2010-10-16 YAPC::Asia Tokyo</h3>
+          </div>
+        </div>
+
+        <div class="slide">
+            <h1 style="font-size:4em;">自己紹介</h1>
+            <div class="vcenter">
+                <h2>Eisuke Oishi (大石英介)</h2>
+                <ul>
+                    <li><a href="http://twitter.com/eiskeoishi">@eiskeoishi</a></li>
+                    <li>oishi@cpan.org</li>
+                    <li><a href="http://github.com/eisuke">http://github.com/eisuke</a></li>
+                    <li><a href="http://search.cpan.org/~oishi/">http://search.cpan.org/~oishi/</a></li>
+                    <li>
+                      株式会社ネオ・ウィング (Neo Wing Co.)  システムグループ
+                      <br /><br />
+                      <img src="img/neowing_logo.gif" /><br />
+                      <a href="http://www.neowing.co.jp/">http://www.neowing.co.jp/</a>
+                      <br /><br />
+                      <img src="img/cdjapan_logo.gif" /><br />
+                      <a href="http://www.cdjapan.co.jp/">http://www.cdjapan.co.jp/</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="slide">
+          <h1>PerlのORM</h1>
+          <ul>
+            <li>DBIx::Class</li>
+            <li>DBIx::Skinny</li>
+            <li>DBIx::ObjectDriver</li>
+            <li>Rose::DB::Object</li>
+            <li>Fey::ORM</li>
+            <li>... 等々</li>
+
+          </ul>
+        </div>
+
+        <div class="slide">
+          <h1>PerlのORM</h1>
+          <ul>
+            <li>DBIx::Class</li>
+            <li>DBIx::Skinny</li>
+            <li>DBIx::ObjectDriver</li>
+            <li>Rose::DB::Object</li>
+            <li>Fey::ORM</li>
+            <li>... 等々</li>
+
+          </ul>
+
+          <p>Class::DBI、ActiveRecordの影響が大きい?</p>
+          <p>たぶん全部Active Recordパターン</p>
+        </div>
+
+        <div class="slide">
+          <h1>開発動機</h1>
+
+          <h2>ORM使ってはいるものの、不満が多い</h2>
+          <ul>
+            <li>SQL::Abstractのインターフェースが好きじゃない</li>
+            <li>ORMから作られるオブジェクトはテストしにくい</li>
+            <li>fixtureとか面倒</li>
+            <li>Single Table Inheritanceとか使いたいけどサポートしているものがない</li>
+            <li>DBIx::Class or シンプルなものという両極端な選択しかないのがいやだった</li>
+            <li>レガシーな環境でも使えるもの</li>
+          </ul>
+        </div>
+
+        <div class="slide">
+          <h1 style="text-align:left;">「The Vietnam of Computer Science(コンピューターサイエンスのベトナム戦争)」とか「one of the three usual cardinal sins of the aspiring perl programmer(野心に燃えるPerlプログラマの通常やってはいけない3つの大罪のうち１つ) 」っていわれてるけど、とりあえずやってみた</h1>
+          <h2>2009年12月頃開発開始</h2>
+        </div>
+
+
+        <div class="slide">
+          <h1>DBIx::ObjectMapperとは？</h1>
+        </div>
+
+        <div class="slide">
+          <h1>DBIx::ObjectMapperとは？</h1>
+          <h2>O/R マッパー</h2>
+        </div>
+
+        <div class="slide">
+          <h1>DBIx::ObjectMapperとは？</h1>
+          <h2>O/R マッパー</h2>
+          <h2>Data Mapper Pattern</h2>
+          <ul>
+            <li>Hibernate (Java)</li>
+            <li>SQLAlchemy(Python)</li>
+          </ul>
+        </div>
+
+        <div class="slide">
+          <h1>DBIx::ObjectMapperとは？</h1>
+          <h2>O/R マッパー</h2>
+          <h2>Data Mapper Pattern</h2>
+          <ul>
+            <li>Hibernate (Java)</li>
+            <li>SQLAlchemy(Python)</li>
+          </ul>
+          <h2>SQLAlchemyからいろいろ盗んでいる</h2>
+        </div>
+
+
+        <div class="slide">
+          <h1>Data Mapper Patternとは？</h1>
+        </div>
+
+        <div class="slide">
+          <h1>Data Mapper Patternとは？</h1>
+          <h2>Active Recordパターン</h2>
+          <img src="activerecord.png" />
+        </div>
+
+        <div class="slide">
+          <h1>Data Mapper Patternとは？</h1>
+          <h2>Data Mapper Pattern</h2>
+          <img src="datamapper.png" />
+          <h2>Active Recordパターンをより抽象化したものとも考えられる</h2>
+        </div>
+
+        <div class="slide">
+          <h1>Data Mapper Patternとは？</h1>
+        </div>
+
+        <div class="slide">
+          <h1>Data Mapper Patternとは？</h1>
+          <ul>
+            <li>クラスとテーブルは互いに依存していない</li>
+          </ul>
+        </div>
+
+        <div class="slide">
+          <h1>Data Mapper Patternとは？</h1>
+          <ul>
+            <li>クラスとテーブルは互いに依存していない</li>
+            <li>クラスはORMに関係なく、単体としても使用できる</li>
+            <li> => ORMに依存しない単体テストができる </li>
+          </ul>
+        </div>
+
+        <div class="slide">
+          <h1>Data Mapper Patternとは？</h1>
+          <ul>
+            <li>クラスとテーブルは互いに依存していない</li>
+            <li>クラスはORMに関係なく、単体としても使用できる</li>
+            <li> => ORMに依存しない単体テストができる </li>
+            <li>クラスの中身はこちらが作る</li>
+            <li> => 昔ながらのPerlオブジェクト、そしてMo[ou]seでも</li>
+          </ul>
+        </div>
+
+        <div class="slide">
+          <h1>Data Mapper Patternとは？</h1>
+          <ul>
+            <li>クラスとテーブルは互いに依存していない</li>
+            <li>クラスはORMに関係なく、単体としても使用できる</li>
+            <li> => ORMに依存しない単体テストができる </li>
+            <li>クラスの中身はこちらが作る</li>
+            <li> => 昔ながらのPerlオブジェクト、そしてMo[ou]seでも</li>
+            <li>テーブルから設計だけでなく、クラスから設計という方法ができたりする？</li>
+          </ul>
+        </div>
+
+
+        <div class="slide">
+          <h1>準備</h1>
+
+          <pre class="brush: perl">
+            use DBIx::ObjectMapper;
+            use DBIx::ObjectMapper::Engine::DBI;
+            my $mapper = DBIx::ObjectMapper->new(
+                engine => DBIx::ObjectMapper::Engine::DBI->new({
+                    dsn      => 'DBI:SQLite:',
+                    username => undef,
+                    password => undef,
+                }),
+            );
+          </pre>
+
+        </div>
+
+
+        <div class="slide">
+          <h1>準備</h1>
+
+          <pre class="brush: sql">
+            CREATE TABLE users (
+              id   INTEGER NOT NULL PRIMARY KEY,
+              name TEXT
+            );
+          </pre>
+
+          <pre class="brush: perl">
+            package User;
+            use Any::Moose;
+
+            has 'id'   => ( is => 'rw', isa => 'Int' );
+            has 'name' => ( is => 'rw', isa => 'Str' );
+
+            __PACKAGE__->meta->make_immutable;
+          </pre>
+        </div>
+
+        <div class="slide">
+          <h1>準備</h1>
+
+          <pre class="brush: perl">
+            my $user_table = $mapper->metadata->table(
+               'users' => 'autoload'
+            );
+
+            $mapper->maps( $user_table => 'User' );
+          </pre>
+
+          <ul>
+            <li>constructor名前はnew</li>
+            <li>constructorはHash Referenceが引数</li>
+            <li>tableのcolumnとclassの属性が一致している</li>
+          </ul>
+        </div>
+
+        <div class="slide">
+          <h1>準備おわり</h1>
+        </div>
+
+
+        <div class="slide">
+          <h1>INSERT</h1>
+
+          <pre class="brush: perl">
+            my $session = $mapper->begin_session( autocommit => 0 );
+
+            my $user = User->new( name => 'username' );
+            $session->add($user);
+            $session->commit;
+            # BEGIN;
+            # INSERT INTO users ( name ) VALUES ('username');
+            # COMMIT;
+          </pre>
+
+        </div>
+
+        <div class="slide">
+          <h1>Get</h1>
+          <h2>Primary Keyからロードする</h2>
+
+          <pre class="brush: perl">
+            my $session = $mapper->begin_session( autocommit => 0 );
+            my $user = $session->get( 'User' => 1 );
+            # SELECT users.id, users.name FROM users WHERE ( users.id = 1 );
+            $user->id;
+            $user->title;
+          </pre>
+        </div>
+
+
+        <div class="slide">
+          <h1>UPADTE</h1>
+
+          <pre class="brush: perl">
+            my $session = $mapper->begin_session( autocommit => 0 );
+            my $user = $session->get( 'User' => 1 );
+            # SELECT users.id, users.name FROM users WHERE ( users.id = 1 );
+            $user->name('名前');
+            $session->commit;
+            # BEGIN;
+            # UPDATE users SET name = '名前' WHERE ( users.id = 1 );
+            # COMMIT;
+          </pre>
+        </div>
+
+        <div class="slide">
+          <h1>DELETE</h1>
+
+          <pre class="brush: perl">
+            my $session = $mapper->begin_session( autocommit => 0 );
+            my $user = $session->get( 'User' => 1 );
+            # SELECT users.id, users.name FROM users WHERE ( users.id = 1 );
+            $session->delete($user);
+            $session->commit;
+            # BEGIN;
+            # DELETE FROM users WHERE ( users.id = 1 );
+            # COMMIT;
+          </pre>
+        </div>
+
+        <div class="slide">
+          <h1>Sessionとは？</h1>
+        </div>
+
+        <div class="slide">
+          <h1>Sessionとは？</h1>
+
+          <h3>Mapperへの通話手段</h3>
+          <p>データベースへの操作はSessionを経由してMapperに伝える</p>
+          <pre class="brush: perl">
+            my $session = $mapper->begin_session;
+            $session->add($obj);
+            $session->get( 'ClassName' => 'primary key' );
+            $session->delete($obj);
+          </pre>
+        </div>
+
+        <div class="slide">
+          <h1>Sessionとは？</h1>
+
+          <h3>データベースへ書き込み、更新を行う単位(トランザクション)</h3>
+          <br /><br />
+          <h4>flush, autoflush</h4>
+          <ul>
+            <li>Queryをデータベースに実行する</li>
+            <li>デフォルトはautoflush=0</li>
+            <li>変更点の決定を遅らせるため</li>
+            <li>まとめてQueryを実行する</li>
+            <li>$session->flushで任意にflushできる</li>
+          </ul>
+          <br /><br />
+          <h4>commit, autocommit</h4>
+          <ul>
+            <li>データベースに変更を反映</li>
+            <li>デフォルトはautocommit=1</li>
+            <li>autocommit=0のときは明示的に $session->commit;が実行されないとrollbackする</li>
+            <li>INSERT,DELETE,UPDATEを実行するならautocommit=0にしておいたほうがいい</li>
+            <li>commit前にflushしてないものがあれば、flushしてcommitする</li>
+          </ul>
+        </div>
+
+        <div class="slide">
+          <h1>Sessionとは？</h1>
+
+          <h3>データベースへ書き込み、更新を行う単位(トランザクション)</h3>
+          <br /><br />
+          <h4>デフォルトの動作</h4>
+          <pre class="brush: perl">
+            my $session = $mapper->begin_session(
+                # autocommit => 1,
+                # autoflush  => 0,
+            );
+            $obj->name('なまえ');
+            $session->add($obj2);
+            $session->delete($obj3);
+
+            undef($session);
+            # UPDATE ...
+            # INSERT ...
+            # DELETE ...
+          </pre>
+        </div>
+
+        <div class="slide">
+          <h1>Sessionとは？</h1>
+
+          <h3>データベースへ書き込み、更新を行う単位(トランザクション)</h3>
+          <br /><br />
+          <h4></h4>
+          <h4>autocommit = 0</h4>
+          <pre class="brush: perl">
+            my $session = $mapper->begin_session(
+                autocommit => 0,
+                autoflush  => 0,
+            );
+
+            # BEGIN;
+            $obj->name('なまえ');
+            $session->add($obj2);
+            $session->delete($obj3);
+
+            undef($session);
+            # UPDATE ...
+            # INSERT ...
+            # DELETE ...
+            # ROLLBACK;
+          </pre>
+        </div>
+
+        <div class="slide">
+          <h1>Sessionとは？</h1>
+
+          <h3>データベースへ書き込み、更新を行う単位(トランザクション)</h3>
+          <br /><br />
+          <h4></h4>
+          <h4>autocommit = 0</h4>
+          <pre class="brush: perl">
+            my $session = $mapper->begin_session(
+                autocommit => 0,
+                autoflush  => 0,
+            );
+
+            # BEGIN;
+            $obj->name('なまえ');
+            $session->add($obj2);
+            $session->delete($obj3);
+
+            $session->commit;
+            # UPDATE ...
+            # INSERT ...
+            # DELETE ...
+            # COMMIT;
+            undef($session);
+          </pre>
+        </div>
+
+        <div class="slide">
+          <h1>Sessionとは？</h1>
+
+          <h3>データベースへ書き込み、更新を行う単位(トランザクション)</h3>
+          <br /><br />
+          <h4></h4>
+          <h4>autocommit = 0, 任意にflushする</h4>
+          <pre class="brush: perl">
+            my $session = $mapper->begin_session(
+                autocommit => 0,
+                autoflush  => 0,
+            );
+
+            # BEGIN;
+            $obj->name('なまえ');
+            $session->add($obj2);
+            $session->delete($obj3);
+            $session->flush;
+            # UPDATE ...
+            # INSERT ...
+            # DELETE ...
+
+            $session->commit;
+            # COMMIT;
+            undef($session);
+          </pre>
+        </div>
+
+
+        <div class="slide">
+          <h1>Sessionとは？</h1>
+
+          <h3>キャッシュの有効範囲( no_cache, share_object )</h3>
+          <ul>
+            <li>デフォルトはロードされたオブジェクトをメモリにキャッシュする</li>
+            <li>キャッシュされたオブジェクトが再度ロードされたときは、別オブジェクトだけど同じデータ</li>
+            <pre class="brush: perl">
+              my $session = $mapper->begin_session( share_object => 0 );
+              my $obj1 = $session->get( 'User' => 1 );
+              my $obj2 = $session->get( 'User' => 1 ); # cache
+              # $obj1 != $obj2
+            </pre>
+
+            <li>大量のデータをロードするなどの場合は、no_cache => 1でキャッシュしないようにできる</li>
+
+            <li>share_object => 1で再度ロードされたときに同じオブジェクト</li>
+            <pre class="brush: perl">
+              my $session = $mapper->begin_session( share_object => 1 );
+              my $obj1 = $session->get( 'User' => 1 );
+              my $obj2 = $session->get( 'User' => 1 ); # cache
+              # $obj1 == $obj2
+            </pre>
+            <li>Relationを使ったときに循環参照が発生する可能性があるのでweak referenceの処理をクラス側でやってあげる必要がある</li>
+          </ul>
+        </div>
+
+
+        <div class="slide">
+          <h1>Sessionの初期値をあらかじめ設定しておく</h1>
+
+          <pre class="brush: perl">
+            use DBIx::ObjectMapper;
+            use DBIx::ObjectMapper::Engine::DBI;
+            my $mapper = DBIx::ObjectMapper->new(
+                engine => DBIx::ObjectMapper::Engine::DBI->new({
+                    dsn      => 'DBI:SQLite:',
+                    username => undef,
+                    password => undef,
+                }),
+                session_attr => {
+                    autocommit => 0,
+                    no_cache   => 1,
+                },
+            );
+
+
+            my $session = $mapper->begin_session();
+            # autocommit => 0, no_cache => 1
+          </pre>
+
+        </div>
+
+        <div class="slide">
+          <h1>Search: 複数のオブジェクトを取得</h1>
+
+          <pre class="brush: perl">
+            my $session = $mapper->begin_session( autocommit => 1 );
+
+            my $attr = $mapper->attribute('User');
+            my $it = $session->search('User')
+                             ->filter( $attr->prop('id') > 10 )
+                             ->execute;
+
+            while( my $user = $it->next ) {
+            # SELECT users.id, users.name FROM users WHERE ( users.id > 10 ) ORDER BY users.id;
+                 $user->id;
+                 $user->name;
+            }
+          </pre>
+        </div>
+
+        <div class="slide">
+          <h1>Search: 複数のオブジェクトを取得</h1>
+          <br />
+          <ol>
+            <li>attributeを取得</li>
+            <li>propertyオブジェトを比較</li>
+          </ol>
+
+          <pre class="brush: perl">
+            my $attr = $mapper->attribute('User');
+            $attr->prop('id') == 1;         # => users.id = 1
+            $attr->prop('id') > 1;          # => users.id > 1
+            $attr->prop('id') >= 1;         # => users.id >= 1
+            $attr->prop('id') < 1;          # => users.id < 1
+            $attr->prop('id') <= 1;         # => users.id <= 1
+            $attr->prop('id') != 1;         # => users.id <> 1
+            $attr->prop('id') == undef;     # => users.id IS NULL
+            $attr->prop('id') != undef;     # => users.id IS NOT NULL
+            $attr->prop('id') == [1,2,3,4]; # => users.id IN (1,2,3,4)
+
+            $attr->prop('id')->between( 1,4 ); # => users.id BETWEEN 1 AND 4
+            $attr->prop('name')->like( '%name%' );# => users.name LIKE '%name%'
+            $attr->prop('name')->not_like( '%name%' );# => users.name NOT LIKE '%name%'
+
+            $attr->prop('name')->op( '%%', 'あ' );# => users.name %% 'あ'
+          </pre>
+
+        </div>
+
+        <div class="slide">
+          <h1>Search: 複数のオブジェクトを取得</h1>
+          <br />
+          <h3>AND, ORの定義</h3>
+          <br />
+
+          <h4>AND</h4>
+          <pre class="brush: perl">
+            my $it = $session->search('User')
+                   ->filter(
+                       $attr->prop('id') > 10,
+                       $attr->prop('name')->like('%name%'),
+                   );
+            # id > 10 AND name LIKE '%name%'
+          </pre>
+          <br />
+          <h4>OR</h4>
+          <pre class="brush: perl">
+            my $it = $session->search('User')
+                   ->filter(
+                       {
+                           OR => [
+                               $attr->prop('id') > 10,
+                               $attr->prop('name')->like('%name%'),
+                           ],
+                       },
+                   );
+            # id > 10 OR name LIKE '%name%'
+          </pre>
+
+        </div>
+
+        <div class="slide">
+          <h1>Search: 複数のオブジェクトを取得</h1>
+
+          <h2>メソッドチェーン</h2>
+          <pre class="brush: perl">
+            my $session = $mapper->begin_session( autocommit => 1 );
+
+            my $attr = $mapper->attribute('User');
+            my $id = $attr->prop('id');
+            my $name = $attr->prop('name');
+
+            my $query = $session->search('User')
+              ->filter( $id == [1,2,3,4] )
+              ->order_by( $id );
+
+            $query->add_filter( $name->like('%name%') );
+                  ->add_order_by( $name->desc );
+
+            my $it = $query->execute;
+
+            while( my $user = $it->next ) {
+                 # .....
+            }
+          </pre>
+          <h3>Arel？</h3>
+        </div>
+
+
+        <div class="slide">
+          <h1>Search: 複数のオブジェクトを取得</h1>
+          <h2>メソッドチェーン</h2>
+          <br />
+          <h3>メソッド</h3>
+          <ul>
+            <li>filter</li>
+            <li>order_by</li>
+            <li>limit</li>
+            <li>offset</li>
+            <li>add_filter</li>
+            <li>add_order_by</li>
+          </ul>
+          <br /><br />
+          <h3>終端メソッド</h3>
+          <ul>
+            <li>execute</li>
+            <li>first</li>
+            <li>count</li>
+          </ul>
+        </div>
+
+        <div class="slide">
+          <h1>Search: 複数のオブジェクトを取得</h1>
+          <h2>Pager</h2>
+
+          <pre class="brush: perl">
+            my $session = $mapper->begin_session( autocommit => 1 );
+            my $attr = $mapper->attribute('User');
+
+            my $query = $session->search('User')
+                                ->limit(10)
+                                ->order_by( $attr->prop('id') );
+
+            my ( $it, $pager ) = $query->page(1);
+            # ref($pager) eq 'Data::Page';
+
+            while( my $user = $it->next ) {
+                # ....
+            }
+
+          </pre>
+        </div>
+
+        <div class="slide">
+          <h1>Relationship</h1>
+          <h2>has_many</h2>
+
+          <pre class="brush: sql">
+            CREATE TABLE addresses (
+              id INTEGER NOT NULL PRIMARY KEY,
+              user_id INTEGER NOT NULL REFERENCES users(id),
+              address TEXT
+            );
+          </pre>
+
+          <pre class="brush: perl">
+            package Address;
+            use Any::Moose;
+
+            has 'id'      => ( is => 'rw', isa => 'Int' );
+            has 'user_id' => ( is => 'rw', isa => 'Int' );
+            has 'address' => ( is => 'rw' );
+
+            __PACKAGE__->meta->make_immutable;
+          </pre>
+
+        </div>
+
+
+        <div class="slide">
+          <h1>Relationship</h1>
+          <h2>has_many</h2>
+
+          <pre class="brush: perl">
+            package User;
+            use Any::Moose;
+
+            has 'id'        => ( is => 'rw', isa => 'Int' );
+            has 'name'      => ( is => 'rw', isa => 'Str' );
+            has 'addresses' => ( is => 'rw', isa => 'Maybe[ArrayRef[Address]]' );
+
+            __PACKAGE__->meta->make_immutable;
+          </pre>
+
+          <pre class="brush: perl">
+            my $address_table = $mapper->metadata->table(
+                'addresses' => 'autoload' );
+            $mapper->maps( $address_table => 'Address' );
+            $mapper->maps(
+                $user_table => 'User',
+                attributes  => {
+                    properties => {
+                        addresses => {
+                            isa => $mapper->relation(
+                                has_many => 'Address',
+                                { order_by => $address_table->c('id') }
+                            ),
+                        }
+                    }
+                }
+            );
+          </pre>
+        </div>
+
+        <div class="slide">
+          <h1>Relationship</h1>
+          <h2>has_many</h2>
+
+          <pre class="brush: perl">
+            my $session = $mapper->begin_session( autocommit => 0 );
+            my $user = $session->get( 'User' => 1 );
+            # SELECT users.id, users.title FROM users WHERE users.id = 1;
+
+            my $addresses = $user->addresses;
+            # SELECT addresses.id, addresses.user_id, addresses.address FROM addresses WHERE addresses.user_id = 1 ORDER BY addresses.id
+            for my $address ( @$addresses ) {
+               $address->address;
+            }
+          </pre>
+        </div>
+
+
+        <div class="slide">
+          <h1>Relationship</h1>
+          <h2>belongs_to</h2>
+
+          <pre class="brush: perl">
+            package Address;
+            use Any::Moose;
+
+            has 'id'      => ( is => 'rw', isa => 'Int' );
+            has 'user_id' => ( is => 'rw', isa => 'Int' );
+            has 'address' => ( is => 'rw' );
+
+            has 'user'    => ( is => 'rw', isa => 'User' );
+
+            __PACKAGE__->meta->make_immutable;
+          </pre>
+
+
+          <pre class="brush: perl">
+            my $address_table = $mapper->metadata->table('addresses');
+            $mapper->maps(
+                $address_table => 'Address',
+                attributes => {
+                    properties => {
+                        user => {
+                            isa => $mapper->relation(
+                               'belongs_to' => 'User'
+                            ),
+                        }
+                    }
+                },
+            );
+          </pre>
+
+        </div>
+
+        <div class="slide">
+          <h1>Relationship</h1>
+          <h2>belongs_to</h2>
+
+          <pre class="brush: perl">
+            my $session = $mapper->begin_session( autocommit => 0 );
+            my $address = $session->get( 'Address' => 1 );
+            # SELECT address.id, address.address, address.user_id FROM address WHERE address.id = 1;
+
+            $address->user_id;
+            $address->user;
+            # SELECT users.id, users.name FROM users WHERE users.id = 1
+            $address->user->name;
+          </pre>
+
+        </div>
+
+        <div class="slide">
+          <h1>Relationship</h1>
+          <h2>has_one</h2>
+
+          <pre class="brush: sql">
+            CREATE TABLE profile (
+              id INTEGER NOT NULL PRIMARY KEY REFERENCES users(id),
+              body_text TEXT
+            );
+          </pre>
+
+          <pre class="brush: perl">
+            package Profile;
+            use Any::Moose;
+
+            has 'id'        => ( is => 'rw', isa => 'Int' );
+            has 'body_text' => ( is => 'rw' );
+
+            __PACKAGE__->meta->make_immutable;
+          </pre>
+
+          <pre class="brush: perl">
+            package User;
+            use Any::Moose;
+
+            has 'id'        => ( is => 'rw', isa => 'Int' );
+            has 'name'      => ( is => 'rw', isa => 'Str' );
+            has 'addresses' => ( is => 'rw', isa => 'Maybe[ArrayRef[Address]]' );
+            has 'profile'   => ( is => 'rw', isa => 'Maybe[Profile]' );
+
+            __PACKAGE__->meta->make_immutable;
+          </pre>
+
+        </div>
+
+        <div class="slide">
+          <h1>Relationship</h1>
+          <h2>has_one</h2>
+
+          <pre class="brush: perl">
+            my $profile_table = $mapper->metadata->t(
+                'profile' => 'autoload'
+            );
+            $mapper->maps( $profile_table => 'Profile' );
+
+            $mapper->maps(
+                $user_table => 'User',
+                attributes  => {
+                    properties => {
+                        addresses => {
+                            isa => $mapper->relation(
+                                has_many => 'Address',
+                                { order_by => $address_table->c('id') }
+                            ),
+                        },
+                        profile => {
+                            isa => $mapper->relation(
+                                has_one => 'Profile'
+                            )
+                        },
+                    }
+                }
+            );
+          </pre>
+
+        </div>
+
+        <div class="slide">
+          <h1>Relationship</h1>
+          <h2>many_to_many</h2>
+
+          <pre class="brush: sql">
+            CREATE TABLE issues (
+                id INTEGER NOT NULL PRIMARY KEY,
+                title TEXT
+            );
+
+            CREATE TABLE user_issues (
+                user_id INTEGER NOT NULL REFERENCES users(id),
+                issue_id  INTEGER NOT NULL REFERENCES issues(id)
+            );
+          </pre>
+        </div>
+
+        <div class="slide">
+          <h1>Relationship</h1>
+          <h2>many_to_many</h2>
+          <pre class="brush: perl">
+            my $issue_table = $mapper->metadata->t('issues' => 'autoload');
+            my $user_issue_table = $mapper->metadata->t(
+                'user_issues' => 'autoload');
+
+            $mapper->maps(
+                $issue_table => 'Issue',
+                constructor => { auto => 1 },
+                accessors   => { auto => 1 },
+            ); # 自動でIssueクラスが作成される
+
+            $mapper->maps(
+                $user_table => 'User',
+                attributes  => {
+                    properties => {
+                        issues => {
+                            isa => $mapper->relation(
+                                many_to_many
+                                  => $user_issue_table => 'Issue',
+                            )
+                        }
+                    }
+                }
+            );
+          </pre>
+        </div>
+
+        <div class="slide">
+          <h1>Relationship</h1>
+          <h2>many_to_many</h2>
+
+          <pre class="brush: perl">
+            my $session = $mapper->begin_session( autocommit => 0 );
+            my $user = $session->get( 'User' => 1 );
+            my $issues = $user->issues;
+            for my $issue (@$issues) {
+                $issue->title;
+            }
+
+            push @$issues, Issue->new( title => 'new issue' );
+            $session->commit;
+            # INSERT INTO issues ( title ) VALUES ('new issue');
+            # INSERT INTO user_issues ( issue_id, user_id ) VALUES (2,1)
+          </pre>
+        </div>
+
+        <div class="slide">
+          <h1>Relationship</h1>
+          <h2>Self-relationship</h2>
+
+          <pre class="brush: sql">
+            CREATE TABLE comments (
+                id INTEGER NOT NULL PRIMARY KEY,
+                comment TEXT,
+                reply_to INTEGER REFERENCES comments(id)
+            );
+          </pre>
+
+          <pre class="brush: perl">
+            my $comment_table = $mapper->metadata->table('comments');
+            $mapper->maps(
+                $comment_table => 'Comment',
+                constructor => { auto => 1 },
+                accessors => { auto => 1 },
+                attributes => {
+                    properties => {
+                        replies => {
+                            isa => $mapper->relation(
+                                'has_many' => 'Comment'
+                            ),
+                        },
+                        parent => {
+                            isa => $mapper->relation(
+                                'belongs_to' => 'Comment'
+                            ),
+                        }
+                    }
+                }
+            );
+          </pre>
+        </div>
+
+        <div class="slide">
+          <h1>Relationship</h1>
+          <h2>Self-relationship</h2>
+
+          <pre class="brush: perl">
+            my $session = $mapper->begin_session( autocommit => 0 );
+            my $first = Comment->new( comment => 'first comment' );
+            $session->add($first);
+            $session->commit;
+            # INSERT INTO comments ( comment ) VALUES ('first comment');
+
+            my $second = Comment->new(
+                comment => 'second comment',
+                reply_to => $first->id,
+            );
+            # SELECT comments.id, comments.comment, comments.reply_to FROM comments WHERE ( comments.id = 1 )
+
+            $session->add($second);
+            $session->commit;
+            # INSERT INTO comments ( comment, reply_to ) VALUES ('second comment',1);
+
+            for my $reply ( @{$first->replies} ) {
+            # SELECT comments.comment, comments.reply_to, comments.id FROM comments WHERE ( comments.reply_to = 1 ) ORDER BY comments.id
+                $reply->comment;
+                $reply->parent->comment; # cache
+            }
+          </pre>
+
+        </div>
+
+        <div class="slide">
+          <h1>Relationship</h1>
+          <h2>Joinを使った問い合わせ</h2>
+
+          <pre class="brush: perl">
+            my $session = $mapper->begin_session( autocommit => 0 );
+            my $attr = $mapper->attribute('User');
+            my $it = $session->search('User')->filter(
+                $attr->prop('addresses.address')->like('東京都%') )->execute;
+
+            while ( my $user = $it->next ) {
+            # SELECT users.name, users.id FROM users LEFT OUTER JOIN address AS addresses ON ( addresses.user_id = users.id ) WHERE ( addresses.address LIKE '東京都%' ) GROUP BY users.name, users.id
+
+            }
+          </pre>
+
+          <p>Relationを設定している属性にドット(.)をつけて、その先の属性を参照できる(addresses => Address => address )</p>
+          <p>ただし、Relation先のデータはとってこない</p>
+        </div>
+
+
+        <div class="slide">
+          <h1>Relationship</h1>
+          <h2>Eager Loading</h2>
+          <p>リレーションのデータまで一気に1回で取得</p>
+          <br />
+          <h3>search</h3>
+          <pre class="brush: perl">
+            my $attr = $mapper->attribute('User');
+            my $it = $session->search('User')
+                ->eagerload( $attr->prop('addresses') )
+                ->execute;
+            while( my $u = $it->next ) {
+            # SELECT users.name, users.id, addresses.id, addresses.user_id, addresses.address FROM users LEFT OUTER JOIN address AS addresses ON ( addresses.user_id = users.id )
+                $u->id;
+                $u->addresses;
+            }
+          </pre>
+          <br />
+          <h3>get</h3>
+          <pre class="brush: perl">
+            my $session = $mapper->begin_session( autocommit => 0 );
+            $session->get( 'User' => 1, { eagerload => 'addresses' } );
+            # SELECT users.name, users.id, addresses.id, addresses.user_id, addresses.address FROM users LEFT OUTER JOIN address AS addresses ON ( addresses.user_id = users.id ) WHERE ( users.id = ? )
+          </pre>
+        </div>
+
+
+        <div class="slide">
+          <h1>mappingあれこれ</h1>
+          <h2>mapsの引数その１</h2>
+
+          <h3>constructor</h3>
+          <pre class="brush: perl">
+            $mapper->maps(
+                $table_metadata => 'ClassName',
+                constructor => {
+                    name => 'new',
+                    arg_type => 'HASHREF',
+                    auto => 0,
+                }
+            );
+          </pre>
+
+          <ul>
+            <li>name</li>
+            <li>arg_type: HASHREF|HASH|ARRAY|ARRAYREF</li>
+            <li>auto</li>
+          </ul>
+
+        </div>
+
+        <div class="slide">
+          <h1>mappingあれこれ</h1>
+          <h2>mapsの引数その２</h2>
+
+          <h3>attributes</h3>
+          <pre class="brush: perl">
+            $mapper->maps(
+                $table_metadata => 'ClassName',
+                attributes => {
+                    prefix => '',
+                    include => [],
+                    exclude => [],
+                    properties => +{},
+                }
+            );
+          </pre>
+
+          <ul>
+            <li>prefix</li>
+            <li>include</li>
+            <li>exclude</li>
+          </ul>
+        </div>
+
+        <div class="slide">
+          <h1>mappingあれこれ</h1>
+          <h2>mapsの引数その２</h2>
+
+          <h3>attributes => properties </h3>
+          <pre class="brush: perl">
+            $mapper->maps(
+                $table_metadata => 'ClassName',
+                attributes => {
+                    properties => +{
+                        col => {
+                            isa   => $table_metadata->column('col'),
+                            getter => 'col',
+                            setter => 'col',
+                            lazy  => 0,
+                        }
+                    },
+                }
+            );
+          </pre>
+
+          <ul>
+            <li>isa</li>
+            <li>getter</li>
+            <li>setter</li>
+            <li>lazy - booleanまたは文字列の場合Group化できる</li>
+          </ul>
+        </div>
+
+
+        <div class="slide">
+          <h1>mappingあれこれ</h1>
+          <h2>mapsの引数その３</h2>
+          <h3>accessors</h3>
+
+          <pre class="brush: perl">
+            $mapper->maps(
+                $table_metadata => 'ClassName',
+                accessors => {
+                    auto => 0,
+                    do_replace => 0,
+                    exclude => [],
+                    generic_getter => '',
+                    generic_setter => '',
+                }
+            )
+          </pre>
+
+          <ul>
+            <li>auto</li>
+            <li>do_replace</li>
+            <li>exclude</li>
+          </ul>
+
+          <ul>
+            <li>generic_getter - set,param</li>
+            <li>generic_setter - get,param</li>
+          </ul>
+
+        </div>
+
+
+        <div class="slide">
+          <h1>mappingあれこれ</h1>
+          <h2>リストを要求するコンストラクタの場合</h2>
+
+          <pre class="brush: perl">
+            package User;
+            use strict;
+            use warnings;
+            use base qw(Class::Accessor::Fast);
+            __PACAKGE__->mk_accessors(qw(id name));
+
+            sub new {
+                my $class = shift;
+                my ( $id, $title ) = @_;
+                bless {
+                    id   => $id,
+                    name => $name,
+                }, $class;
+            }
+
+            1;
+          </pre>
+
+          <pre class="brush: perl">
+            $mapper->maps(
+                $user_table => 'User',
+                contstructor => { arg_type => 'ARRAY' },
+                attributes => {
+                    properties => [
+                        { isa => $user_table->c('id') },
+                        { isa => $user_table->c('name') },
+                    ]
+                }
+            );
+          </pre>
+        </div>
+
+        <div class="slide">
+          <h1>mappingあれこれ</h1>
+          <h2>Array Referenceを要求するコンストラクタの場合</h2>
+
+          <pre class="brush: perl">
+            package User;
+            use strict;
+            use warnings;
+            use base qw(Class::Accessor::Fast);
+            __PACAKGE__->mk_accessors(qw(id name));
+
+            sub new {
+                my $class = shift;
+                my ( $id, $title ) = @{$_[0]};
+                bless {
+                    id   => $id,
+                    name => $name,
+                }, $class;
+            }
+
+            1;
+          </pre>
+
+          <pre class="brush: perl">
+            $mapper->maps(
+                $user_table => 'User',
+                contstructor => { arg_type => 'ARRAYREF' },
+                attributes => {
+                    properties => [
+                        { isa => $user_table->c('id') },
+                        { isa => $user_table->c('name') },
+                    ]
+                }
+            );
+          </pre>
+
+        </div>
+
+
+        <div class="slide">
+          <h1>mappingあれこれ</h1>
+          <h2>CGI.pm likeなアクセッサ</h2>
+
+          <pre class="brush: perl">
+            package User;
+            use strict;
+            use warnings;
+            use base qw(Class::Accessor::Fast);
+
+            sub param {
+                my $self = shift;
+                if( @_ == 2 ) {
+                    $self->{$_[0]} = $_[1];
+                }
+                elsif( @_ == 1 ) {
+                    $self->{$_[0]};
+                }
+            }
+
+            1;
+          </pre>
+
+          <pre class="brush: perl">
+            $mapper->maps(
+                $user_table => 'User',
+                accessors => {
+                     generic_getter => 'param',
+                     generic_setter => 'param',
+                },
+            );
+          </pre>
+        </div>
+
+
+        <div class="slide">
+          <h1>mappingあれこれ</h1>
+          <h2>自動にクラスを作成</h2>
+
+          <pre class="brush: perl">
+            $mapper->maps(
+                $user_table => 'User',
+                contstructor => { auto => 1 },
+                accessors    => { auto => 1 },
+            );
+          </pre>
+        </div>
+
+        <div class="slide">
+          <h1>継承(Inheritance)</h1>
+          <h2>Single Table Inheritance</h2>
+
+          <pre class="brush: sql">
+            CREATE TABLE users (
+              id   INTEGER NOT NULL PRIMARY KEY,
+              name TEXT,
+              type TEXT
+            );
+          </pre>
+
+
+          <pre class="brush: perl">
+            package User;
+            use Any::Moose;
+
+            has 'id'   => ( is => 'rw', isa => 'Int' );
+            has 'name' => ( is => 'rw', isa => 'Str' );
+            has 'type' => ( is => 'rw', isa => 'Maybe[Str]' );
+
+            __PACKAGE__->meta->make_immutable;
+          </pre>
+        </div>
+
+        <div class="slide">
+          <h1>継承(Inheritance)</h1>
+          <h2>Single Table Inheritance</h2>
+
+          <pre class="brush: perl">
+            package User::Gold;
+            use Any::Moose;
+            extends 'User';
+
+            __PACKAGE__->meta->make_immutable;
+          </pre>
+
+          <pre class="brush: perl">
+            package User::Silver;
+            use Any::Moose;
+            extends 'User';
+
+            __PACKAGE__->meta->make_immutable;
+          </pre>
+        </div>
+
+        <div class="slide">
+          <h1>継承(Inheritance)</h1>
+          <h2>Single Table Inheritance</h2>
+
+          <pre class="brush: perl">
+            $mapper->maps(
+                $user_table => 'User',
+                polymorphic_on => 'type',
+            );
+          </pre>
+
+          <pre class="brush: perl">
+            $mapper->maps(
+                $user_table => 'User::Gold',
+                polymorphic_identity => 'gold',
+                inherits => 'User',
+            );
+          </pre>
+
+          <pre class="brush: perl">
+            $mapper->maps(
+                $user_table => 'User::Silver',
+                polymorphic_identity => 'silver',
+                inherits => 'User',
+            );
+          </pre>
+
+
+          <p>!mappingの設定は単一継承</p>
+        </div>
+
+        <div class="slide">
+          <h1>継承(Inheritance)</h1>
+          <h2>Single Table Inheritance</h2>
+
+          <pre class="brush: perl">
+            my $session = $mapper->begin_session( autocommit => 0 );
+            $session->add( User->new( name => 'normal user' ) );
+            $session->add( User::Gold->new( name => 'gold user' ) );
+            $session->add( User::Silver->new( name => 'silver user' ) );
+            $session->commit;
+            # INSERT INTO users ( name ) VALUES ( 'normal user' );
+            # INSERT INTO users ( name, type ) VALUES ( 'gold user', 'gold');
+            # INSERT INTO users ( name, type ) VALUES ( 'silver user', 'silver');
+          </pre>
+        </div>
+
+        <div class="slide">
+          <h1>継承(Inheritance)</h1>
+          <h2>Single Table Inheritance</h2>
+
+          <pre class="brush: perl">
+            my $session = $mapper->begin_session( autocommit => 0 );
+
+            my @all    = @{ $session->search('User')->execute };
+            # SELECT users.name, users.type, users.id FROM users;
+
+            my @gold   = @{ $session->search('User::Gold')->execute };
+            # SELECT users.name, users.type, users.id FROM users WHERE ( users.type = 'gold';
+
+            my @silver = @{ $session->search('User::Silver')->execute };
+            # SELECT users.name, users.type, users.id FROM users WHERE ( users.type = 'silver';
+          </pre>
+        </div>
+
+        <div class="slide">
+          <h1>継承(Inheritance)</h1>
+          <h2>Single Table Inheritance</h2>
+
+          <pre class="brush: perl">
+            my $session = $mapper->begin_session( autocommit => 0 );
+
+            my @all = @{ $session->search('User')
+                                 ->with_polymorphic('*')->execute };
+            # SELECT users.name, users.type, users.id FROM users;
+          </pre>
+
+          <pre class="brush: perl">
+            (
+              bless({ id => 1, name => "normal user", type => undef }, "User"),
+              bless({ id => 2, name => "gold user", type => "gold" }, "User::Gold"),
+              bless({ id => 3, name => "silver user", type => "silver" }, "User::Silver"),
+            )
+          </pre>
+        </div>
+
+        <div class="slide">
+          <h1>継承(Inheritance)</h1>
+          <h2>Class Table Inheritance</h2>
+
+          <pre class="brush: sql">
+            CREATE TABLE gold_users (
+                id INTEGER NOT NULL PRIMARY KEY,
+                point INTEGER NOT NULL,
+                FOREIGN KEY(id) REFERENCES users(id)
+            );
+          </pre>
+
+          <pre class="brush: perl">
+            my $gold_user_table = $mapper->metadata->table(
+                'gold_users' => 'autoload'
+            );
+
+            $mapper->maps(
+                $gold_user_table => 'User::Gold',
+                polymorphic_identity => 'gold',
+                inherits => 'User',
+            );
+          </pre>
+        </div>
+
+        <div class="slide">
+          <h1>継承(Inheritance)</h1>
+          <h2>Class Table Inheritance</h2>
+
+          <pre class="brush: perl">
+            package User::Gold;
+            use Any::Moose;
+            extends 'User';
+
+            has 'point' => ( is => 'rw', point => 'Int' );
+
+            __PACKAGE__->meta->make_immutable;
+          </pre>
+
+          <pre class="brush: perl">
+            my $session = $mapper->begin_session( autocommit => 0 );
+            $session->add(
+                User::Gold->new( name => 'gold user', point => 100 ) );
+            $session->commit;
+            # INSERT INTO users ( name, type ) VALUES ('gold user', 'gold');)
+            # INSERT INTO gold_users ( id, point ) VALUES (2, 100);
+          </pre>
+        </div>
+
+        <div class="slide">
+          <h1>継承(Inheritance)</h1>
+          <h2>Class Table Inheritance</h2>
+
+          <pre class="brush: perl">
+            my $session = $mapper->begin_session( autocommit => 0 );
+
+            my @all = @{ $session->search('User')
+                                 ->with_polymorphic('*')->execute };
+            # SELECT users.name, users.type, users.id, gold_users.point FROM users LEFT OUTER JOIN gold_users ON ( gold_users.id = users.id )
+          </pre>
+
+        </div>
+
+        <div class="slide">
+          <h1>Sinble Tabel Inheritanceと<br/>Class Table Inheritance</h1>
+          <ul>
+            <li>操作は同じ</li>
+            <li>テーブル定義とQueryが違うだけ(１つのテーブルかクラス毎に存在しているか)</li>
+            <li>両方が混合していてもよい</li>
+            <li>拡張性が高い</li>
+          </ul>
+        </div>
+
+
+        <div class="slide">
+          <h1>Metadata</h1>
+
+          <h2>Metadataとは？</h2>
+          <p>データベーススキーマを保持している</p>
+          <p>MapperはMetadataを経由してEngineと通信している</p>
+
+         <br />
+          <br />
+          <h2>Metadataでできること</h2>
+          <ul>
+            <li>スキーマを上書き</li>
+            <li>Typeの指定, Default, OnUpdate</li>
+            <li>シンプルにデータベースへアクセスするためのツールとして使える(Metadataからデータベースを操作する)</li>
+          </ul>
+        </div>
+
+
+        <div class="slide">
+          <h1>Metadata</h1>
+          <h2>スキーマを上書き</h2>
+
+          <p>Foreign Keyを定義したいけど、データベースには定義されていない場合</p>
+          <pre class="brush: perl">
+            use DBIx::ObjectMapper::Metadata::Sugar qw(:all);
+
+            $mapper->metadata->table(
+                'addresses' => [
+                    Col( 'user_id' => ForeignKey( 'users' => 'id' ) ),
+                ] => { autoload => 1 },
+            );
+          </pre>
+
+          <ul>
+            <li>PrimaryKey()</li>
+            <li>NotNull()</li>
+            <li>Unique()</li>
+            <li>ForeignKey( 'table' => 'key' )</li>
+          </ul>
+        </div>
+
+        <div class="slide">
+          <h1>Metadata</h1>
+          <h2>スキーマを上書き</h2>
+          <h3>カラムのタイプを上書き</h3>
+
+          <pre class="brush: perl">
+            use DBIx::ObjectMapper::Metadata::Sugar qw(:all);
+
+            $mapper->metadata->table(
+                'user' => [
+                    Col( 'yaml_data' => Yaml ), # TEXT
+                    Col( 'stotorable_data' => Mush ), # TEXT
+                    Col( 'myuri' => Uri ), # VARCHAR(256)
+                ] => { autoload => 1 },
+            );
+          </pre>
+
+          <h3>Metadata:::Table::Column::TypeMapで自動で定義</h3>
+          <br /><br />
+          <h3>Metadata:::Table::Column::Type::</h3>
+          <p>Array, BigInt, Binary, Bit, Boolean, Date, Datetime, Float, Int, Interval, Mush, Numeric, SmallInt, String, Text, Time, Undef, Uri, Yaml</p>
+        </div>
+
+        <div class="slide">
+          <h1>Metadata</h1>
+          <h2>スキーマを上書き</h2>
+          <h3>Default,OnUpdate</h3>
+
+          <pre class="brush: perl">
+            use DBIx::ObjectMapper::Metadata::Sugar qw(:all);
+            $mapper->metadata->table(
+                'user' => [
+                    Col( created => Default{ DateTime->now() } ),
+                    Col( modified => OnUpdate{ DateTime->now() } ),
+                ]
+            );
+          </pre>
+
+          <h3>FromStorage, ToStorage (inflate, deflate)</h3>
+          <pre class="brush: perl">
+            use DBIx::ObjectMapper::Metadata::Sugar qw(:all);
+            $mapper->metadata->table(
+                'user' => [
+                    Col( modified =>
+                            OnUpdate{ DateTime->now() },
+                            FromStorage { ... CODE ... },
+                            ToStorage { ... CODE ... },
+                    ),
+                ]
+            );
+          </pre>
+
+        </div>
+
+        <div class="slide">
+          <h1>Metadata</h1>
+          <h2>メタデータからデータベースを操作する</h2>
+
+          <h3>insert</h3>
+          <pre class="brush: perl">
+            my $metadata = $mapper->metadata;
+            my $user_table = $metadata->table('users');
+
+            # insert
+            $metadata->insert
+                     ->into('users')
+                     ->values( name => 'user1' )
+                     ->execute;
+            # or
+            $user_table->insert->values( name => 'user2' )->execute;
+
+          </pre>
+        </div>
+
+        <div class="slide">
+          <h1>Metadata</h1>
+          <h2>メタデータからデータベースを操作する</h2>
+
+          <h3>update</h3>
+          <pre class="brush: perl">
+            my $metadata = $mapper->metadata;
+            my $user_table = $metadata->table('users');
+
+            $metadata->update->table('users')
+                             ->set( name => 'ユーザ1')
+                             ->where( $user_table->c('id') == 1 )
+                             ->execute();
+
+            $user_table->update->set( name => 'ユーザ1')
+                               ->where( $user_table->c('id') == 1 )
+                               ->execute;
+          </pre>
+        </div>
+
+        <div class="slide">
+          <h1>Metadata</h1>
+          <h2>メタデータからデータベースを操作する</h2>
+
+          <h3>delete</h3>
+          <pre class="brush: perl">
+            my $metadata = $mapper->metadata;
+            my $user_table = $metadata->table('users');
+
+            $metadata->delete->table('users')
+                             ->where( $user_table->c('id') == 1 )
+                             ->execute();
+
+            $user_table->delete
+                       ->where( $user_table->c('id') == 1 )
+                       ->execute;
+          </pre>
+        </div>
+
+        <div class="slide">
+          <h1>Metadata</h1>
+          <h2>メタデータからデータベースを操作する</h2>
+
+          <h3>select</h3>
+          <pre class="brush: perl">
+            my $metadata = $mapper->metadata;
+            my $user_table = $metadata->table('users');
+
+            my $it = $metadata->select
+                              ->table('users')
+                              ->where( $user_table->c('id') == 1 )
+                              ->execute();
+            # or
+            my $it = $user_table->select
+                       ->where( $user_table->c('id') == 1 )
+                       ->execute;
+
+            while( my $result = $it->next ) {
+            # SELECT * FROM users WHERE users.id = 1;
+                $result->{id};
+                $result->{name};
+            }
+          </pre>
+        </div>
+
+        <div class="slide">
+          <h1>Metadata</h1>
+          <h2>メタデータからデータベースを操作する</h2>
+
+          <h3>select2</h3>
+          <pre class="brush: perl">
+            my $metadata = $mapper->metadata;
+            my $user_table = $metadata->table('users');
+
+            my $it = $user_table->select
+                       ->column( $user_table->c('name') )
+                       ->where( $user_table->c('id') == 1 )
+                       ->execute;
+
+            while( my $result = $it->next ) {
+            # SELECT users.name FROM users WHERE users.id = 1;
+                $result->{name};
+            }
+          </pre>
+        </div>
+
+
+        <div class="slide">
+          <h1>Metadata</h1>
+          <h2>メタデータからデータベースを操作する</h2>
+
+          <h3>find</h3>
+          <pre class="brush: perl">
+            my $user_table = $mapper->metadata->table('users');
+
+            my $user = $user_table->find(1);
+            $user->{id};
+            $user->{name};
+          </pre>
+        </div>
+
+        <div class="slide">
+          <h1>Metadata</h1>
+          <h2>メタデータからデータベースを操作する</h2>
+
+          <h3>count</h3>
+          <pre class="brush: perl">
+            my $user_table = $mapper->metadata->table('users');
+            $user_table->select
+                       ->column({count=>'*'})
+                       ->first->{count};
+
+            my $cnt = $user_table->count->execute;
+          </pre>
+        </div>
+
+        <div class="slide">
+          <h1>Metadata</h1>
+          <h2>メタデータからデータベースを操作する</h2>
+
+          <h3>count</h3>
+          <pre class="brush: perl">
+            my $user_table = $mapper->metadata->table('users');
+            $user_table->select
+                       ->column({count=>'*'})
+                       ->first->{count};
+
+            my $cnt = $user_table->count->execute;
+          </pre>
+        </div>
+
+        <div class="slide">
+          <h1>Metadata</h1>
+          <h2>メタデータからデータベースを操作する</h2>
+
+          <h3>select - join</h3>
+          <pre class="brush: perl">
+            my $user_table = $mapper->metadata->table('users');
+            my $addr_table = $mapper->metadata->table('addresses');
+
+            my $query = $user_table->select
+                     ->join([
+                        $addr_tables => [
+                            $address->c('person') == $person->c('id')
+                        ]
+                     ])
+                     ->column( @{$user_table->columns} )
+                     ->order_by( $user_table->c('id') );
+
+            $query->add_column(@{$addr_table->columns});
+
+            my $it = $query->execute;
+            while( my $result = $it->next ) {
+                $result->{id};
+                $result->{name};
+                $result->{addresses}{address};
+                $result->{addresses}{user_id};
+            }
+          </pre>
+        </div>
+
+
+        <div class="slide">
+          <h1>Metadata</h1>
+          <h2>メタデータからデータベースを操作する</h2>
+
+          <h3>select - subquery</h3>
+          <pre class="brush: perl">
+            my $it = $user_table->select->where(
+                $user_table->c('id')->in(
+                     $user_table->select->column( $user_table->c('id') )
+                )
+            )->execute;
+          </pre>
+        </div>
+
+
+        <div class="slide">
+          <h1>Metadata</h1>
+          <h2>メタデータからデータベースを操作する</h2>
+
+          <ul>
+            <li>一通りの操作が可能</li>
+            <li>DateTimeなどオブジェクトに変換されている(inflate,deflate)</li>
+            <li>速い</li>
+          </ul>
+        </div>
+
+        <div class="slide">
+          <h1>まとめ</h1>
+          <ul>
+            <li>データベースへアクセスするためのフレームワークではなく、データベースのデータをオブジェクトに渡すツール</li>
+            <li>クラスとテーブルは互いに依存していない</li>
+            <li>クラスはORMに関係なく、独立して使用できる => 単体テスト可能、Black Boxが少ない</li>
+            <li>使ってて気持ちいいインターフェース</li>
+            <li>でも全部オブジェクトはきつい、または、OO廚じゃない人でもmetadataからシンプルに使える</li>
+            <li>Active Recordパターンと対比するとActive Recordパターンのほうがフレームワーク的概念が組みこまれている? => SQLAlchemy -> Elixir</li>
+            <li>柔軟</li>
+          </ul>
+        </div>
+
+        <div class="slide">
+          <h1>今回紹介できなかった機能</h1>
+          <ul>
+            <li>cascade( cascade_save, cascace_update, cascade_delete)</li>
+            <li>queryをmappingする(viewのようなもの)</li>
+            <li>Log</li>
+            <li>transaction, savepoint</li>
+          </ul>
+        </div>
+
+        <div class="slide">
+          <h1 style="font-size: 2.5em">ご清聴ありがとうございました</h1>
+
+          <h2>是非使ってみてください！</h2>
+          <h2>バグ報告、質問、パッチ等々は</h2>
+          <ul>
+            <li><a href="http://github.com/eisuke/dbix-objectmapper">http://github.com/eisuke/dbix-objectmapper</a></li>
+            <li><a href="http://search.cpan.org/dist/DBIx-ObjectMapper/">http://search.cpan.org/dist/DBIx-ObjectMapper/</a></li>
+            <li>@eiskeoishi</li>
+            <li>oishi@cpan.org</li>
+          </ul>
+        </div>
+
+        <div class="layout" name="default">
+          <content></content>
+<!--
+            <div class="footer">
+                <span class="left">Jordi Boggiano</span>
+                <span class="right">Slippy on <a href="http://github.com/Seldaek/slippy/">github</a></span>
+                <span class="left">Blog <a href="http://seld.be/">seld.be</a></span>
+                <span class="right">Twitter <a href="http://twitter.com/seldaek">@seldaek</a></span>
+                <hr class="defloat" />
+            </div>
+-->
+        </div>
+
+        <div class="layout nochrome" name="alt">
+          <content></content>
+        </div>
+    </body>
+</html>

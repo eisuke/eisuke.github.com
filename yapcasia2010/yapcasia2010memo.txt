@@ -1,0 +1,111 @@
+* 自己紹介
+
+* DBIx::ObjectMapperとは？
+  * O/R マッパー
+  * Data Mapper Pattern
+     * Hibernate (Java)
+     * SQLAlchemy(Python)
+  * SQLAlchemyからいろいろ盗んでいる
+
+* Data Mapper Patternとは？
+  * DBIx::ClassとかほとんどのORMはActive Recordパターン
+    = シーケンス図 =
+
+  * Data Mapper Pattern
+    = シーケンス図 =
+    * Active Recordパターンをより抽象化したものとも考えられる
+
+  * pros
+   * クラスとテーブルは互いに依存していない
+   * クラスはORMに関係なく、単体としても使用できる
+      => ORMに依存しない単体テストができる
+   * クラスの中身はこちらが作る
+     => Mo[ou]seでも、昔ながらのPerlオブジェクト指向でもOK
+   * テーブルから設計しなくても、クラスを作っていけば設計できる
+   * 柔軟
+
+  * cons
+   * 設定が面倒
+
+* 基本的な流れ
+  * mapping
+
+  * insert
+  * get
+  * update
+  * delete
+  * sessionの概念
+     * Mapperへの通話手段
+     * トランザクションの範囲
+     * キャッシュの有効範囲
+     * 大きな範囲で使用しない
+
+     * flush
+     * commit
+     * no_cache
+     * shared object
+     * DBIx::ObjectMapper::session_attr
+
+  * search
+     * method chain
+
+  * Relation
+    * belongs_to,has_many,has_one
+    * many_to_many
+    * Self Relation
+  * Join
+  * Eager Loading
+
+* 柔軟に対応できる機能
+  * constructor
+     * arg_type
+     * name
+  * attributes
+     * prefix
+     * include, exclude
+     * Lazy Loading
+
+  * Metadataの定義
+    * レガシーなデータベースに対して上書き
+    * Column::Typeの指定, Default, OnUpdate
+
+* transaction, savepoint
+
+* さらに進んだ機能
+  * Single Table Inheritance
+  * Class Table Inheritance
+
+* Metadataからデータベースを操作する
+
+* DBIx::ObjectMapperを使うコツ
+   * データベースへアクセスするためのフレームワークではなく、データベースのデータをオブジェクトにするツール
+   * 集計処理などでがんばりすぎない -> Metadata,生SQLでもいいと思う
+     * 必要であればクラス化してORMを使えばいい
+   * オブジェクトとして扱うことでラクになるところでつかう
+   * フレームワークとしては別に実装する必要がある
+   * Active Recordはフレームワーク的概念が組みこまれているという考え方もできる
+   * Active Recordパターンなラッパー(SQLAlchemyのElixir)
+
+* 今回紹介できなかった機能
+  * cascade
+  * metadataのqueryをクラスにmappingする(viewのようなもの)
+  * Log
+  * 内部的にはClass::MOPを使っている
+
+* ロードマップ
+   * ドキュメントの整備,マニュアル作成
+   * バグfix、リファクタリング
+   * MetadataからCREATE TABLE文発行
+   * 各種データベースの対応
+
+   * MongoDBが良さげ。Engine::MongoDB
+   * 弊社で、実際のプロダクトに使用していきます。(PostgreSQL)
+
+* お問いあわせ
+  * http://github.com/eisuke/dbix-objectmapper
+  * @eiskeoishi
+  * oishi@cpan.org
+
+* Fork, Patch, バグ報告歓迎します
+
+* Any Questions?
