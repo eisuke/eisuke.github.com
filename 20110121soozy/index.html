@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+        <!-- Slide meta data, remove/edit as you see fit -->
+        <title>重量O/R mapperをつくったひとがO/R Mapperについて考えてみた</title>
+        <meta name="generator" content="Organic" />
+        <meta name="author" content="Eisuke Oishi" />
+        <meta name="email" content="oishi@cpan.org" />
+        <meta name="presdate" content="2011-01-21" />
+        <!-- Slippy core file and dependencies -->
+        <script type="text/javascript" src="slippy/src/jquery-1.4.2.min.js"></script>
+        <script type="text/javascript" src="slippy/src/jquery.history.js"></script>
+        <script type="text/javascript" src="slippy/src/slippy-0.9.0.js"></script>
+        <!-- Slippy structural styles -->
+        <link type="text/css" rel="stylesheet" href="slippy/src/slippy-0.9.0.css"/>
+        <!-- Slippy theme -->
+        <link type="text/css" rel="stylesheet" href="my.css"/>
+        <!-- Syntax highlighting core file  -->
+        <script type="text/javascript" src="slippy/src/highlighter/shCore.js"></script>
+        <!-- Syntax highlighting brushes, remove those you don't need -->
+        <script type="text/javascript" src="slippy/src/highlighter/shBrushPlain.js"></script>
+        <script type="text/javascript" src="slippy/src/highlighter/shBrushPerl.js"></script>
+        <script type="text/javascript" src="slippy/src/highlighter/shBrushSql.js"></script>
+        <!-- Syntax highlighting styles-->
+        <link type="text/css" rel="stylesheet" href="slippy/src/highlighter/shCore.css"/>
+<!--
+        <link type="text/css" rel="stylesheet" href="slippy/src/highlighter/shThemeDjango.css" />
+        <link type="text/css" rel="stylesheet" href="slippy/src/highlighter/shThemeRDark.css" />
+-->
+        <link type="text/css" rel="stylesheet" href="slippy/src/highlighter/shThemeMidnight.css" />
+
+
+        <!-- Slippy init code -->
+        <script type="text/javascript">
+            $(function() {
+                $(".slide").slippy({
+                    // settings go here
+                    // possible values are:
+                    //  - animLen, duration for default animations (0 = disabled)
+            animLen: 0
+                    //  - animInForward, receives a slide and animates it
+                    //  - animInRewind, receives a slide and animates it
+                    //  - animOutForward, receives a slide and animates it
+                    //  - animOutRewind, receives a slide and animates it
+                    //  - baseWidth, defines the base for img resizing, if you don't want only
+                    //    full-width images, specify this as the pixel width of a slide so that
+                    //    images are scaled properly (default is 620px wide)
+                    //  - ratio, defines the width/height ratio of the slides, defaults to 1.3 (620x476)
+                });
+                SyntaxHighlighter.all();
+            });
+        </script>
+        <!-- Custom style for this deck -->
+        <style type="text/css">
+            .slide.nochrome {
+                border: 0;
+                background: 0;
+            }
+
+            h1 { font-size: 2.5em; }
+            p{ font-size: 1.5em; }
+            li{ font-size: 1.5em; }}
+        </style>
+    </head>
+    <body>
+        <div class="slide">
+            <h1 style="font-size:4em;">自己紹介</h1>
+            <div class="vcenter">
+                <h2>Eisuke Oishi (大石英介)</h2>
+                <ul>
+                    <li><a href="http://twitter.com/eiskeoishi">@eiskeoishi</a></li>
+                    <li>oishi@cpan.org</li>
+                    <li><a href="http://github.com/eisuke">http://github.com/eisuke</a></li>
+                    <li><a href="http://search.cpan.org/~oishi/">http://search.cpan.org/~oishi/</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="slide">
+          <h1>空気をよまず重量O/R mapperをつくりました</h1>
+          <h2>DBIx::ObjectMapper</h2>
+          <ul>
+            <li><a href="http://github.com/eisuke/dbix-objectmapper">http://github.com/eisuke/dbix-objectmapper</a></li>
+            <li><a href="http://search.cpan.org/dist/DBIx-ObjectMapper/">http://search.cpan.org/dist/DBIx-ObjectMapper/</a></li>
+          </ul>
+        </div>
+
+        <div class="slide">
+          <h1>重量O/R mapperをつくったひとがO/R Mapperについて考えてみた</h1>
+          <h2>参考</h2>
+          <ul>
+            <li>http://d.hatena.ne.jp/tokuhirom/20110104/1294170319</li>
+            <li>http://blog.nekokak.org/show?guid=SLu0CXEY4BGAILodMSAp_g</li>
+          </ul>
+        </div>
+
+        <div class="slide">
+          <h1>O/R Mapperはそもそも銀の弾丸ではない</h1>
+          <ul>
+            <li>集計的なもの、大量なバッチ処理</li>
+          </ul>
+        </div>
+
+        <div class="slide">
+          <h1>O/R Mapperはそもそも銀の弾丸ではない</h1>
+          <ul>
+            <li>適材適所</li>
+            <ul>
+              <li>DBIx::ObjectMapperではmetadataで軽量な操作を提供</li>
+            </ul>
+            <li> 集計的なもの、大量なバッチ処理</li>
+          </ul>
+        </div>
+
+        <div class="slide">
+          <h1>O/R mapperの中身を十分に知っている必要がある</h1>
+          <ul>
+            <li>O/Rマッパーつかって結局わけわかんないことにならないくらい</li>
+            <li>どんなSQLが発行されるか</li>
+          </ul>
+        </div>
+
+        <div class="slide">
+          <h1>O/R mapperの中身を十分に知っている必要がある</h1>
+          <ul>
+            <li>O/Rマッパーつかって結局わけわかんないことにならないくらい</li>
+            <li>どんなSQLが発行されるか</li>
+          </ul>
+          <br /><br />
+          <h2>習得コスト</h2>
+        </div>
+
+        <div class="slide">
+          <h1>オブジェクト指向であるメリットがあるか</h1>
+          <ul>
+            <li>システムの複雑さの度合い</li>
+            <li>開発効率/保守性 <-> パフォーマンス</li>
+            <li>継承は便利(Single/Class Table Inheritance)</li>
+            <li>オブジェクトを操作することでその変更が反映されるのはやっぱ便利だったり</li>
+            <li>反面、それはO/R Mapperが巨大化しがち</li>
+          </ul>
+        </div>
+
+        <div class="slide">
+          <h1>オブジェクト指向であるメリットがあるか</h1>
+          <ul>
+            <li>システムの複雑さの度合い</li>
+          </ul>
+        </div>
+
+        <div class="slide">
+          <h1>オブジェクト指向であるメリットがあるか</h1>
+          <ul>
+            <li>システムの複雑さの度合い</li>
+            <li>開発効率/保守性 <-> パフォーマンス</li>
+          </ul>
+        </div>
+
+        <div class="slide">
+          <h1>オブジェクト指向であるメリットがあるか</h1>
+          <ul>
+            <li>システムの複雑さの度合い</li>
+            <li>開発効率/保守性 <-> パフォーマンス</li>
+          </ul>
+        </div>
+
+        <div class="slide">
+          <h1>まとめ</h1>
+          <ul>
+            <li>重量なO/R Mapperは学習コストが高い</li>
+          </ul>
+        </div>
+
+        <div class="slide">
+          <h1>まとめ</h1>
+          <ul>
+            <li>重量なO/R Mapperは学習コストが高い</li>
+            <li>重量なO/R Mapperはがっつりオブジェクト指向</li>
+
+          </ul>
+        </div>
+
+        <div class="slide">
+          <h1>まとめ</h1>
+          <ul>
+            <li>重量なO/R Mapperは学習コストが高い</li>
+            <li>軽量なO/R Mapperという選択はとても理にかなってる</li>
+          </ul>
+        </div>
+
+        <div class="slide">
+          <h1>まとめ</h1>
+          <ul>
+            <li>重量なO/R Mapperは学習コストが高い</li>
+            <li>軽量なO/R Mapperという選択はとても理にかなってる</li>
+            <li>拙作であれば重量でも学習コスト0!!</li>
+          </ul>
+        </div>
+
+        <div class="slide">
+          <h1>まとめ</h1>
+          <ul>
+            <li>重量なO/R Mapperは学習コストが高い</li>
+            <li>軽量なO/R Mapperという選択はとても理にかなってる</li>
+            <li>拙作であれば重量でも学習コスト0!!</li>
+          </ul>
+        </div>
+
+
+        <div class="slide">
+          <h1 style="font-size: 2.5em">ご清聴ありがとうございました</h1>
+        </div>
+
+        <div class="layout" name="default">
+          <content></content>
+<!--
+            <div class="footer">
+                <span class="left">Jordi Boggiano</span>
+                <span class="right">Slippy on <a href="http://github.com/Seldaek/slippy/">github</a></span>
+                <span class="left">Blog <a href="http://seld.be/">seld.be</a></span>
+                <span class="right">Twitter <a href="http://twitter.com/seldaek">@seldaek</a></span>
+                <hr class="defloat" />
+            </div>
+-->
+        </div>
+
+        <div class="layout nochrome" name="alt">
+          <content></content>
+        </div>
+    </body>
+</html>
